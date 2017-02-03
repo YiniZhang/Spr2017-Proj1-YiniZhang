@@ -295,7 +295,7 @@ fviz_cluster(km.res,
 <p>What we get from the cluster plot seems to give us a satisfying result. It is obvious that presidents can be clearly classified into 4 categories according to their preference of topics. If we further link the four groups with the inaugration dates, we come to find out that presidents’ choices of topics are related to time: Although topics has shifted over time, presidents within certain years tend to have similar topics.</p>
 <p>The four groups are as follows:</p>
 <ul>
-<li>Group one: George Washington - Franklin Pierce (1789-1853). Presidents during this period emphasized on <em>Government</em>, <em>Belief</em> and <em>Diplomacy</em> (Here we demonstrate the results of a few well-known presidents). As United States of America was just founded in 1776, the first ten or more presidents were stressing the importance and build-up of the government and relationship with foreign countries, as well as giving the citizens confidence about this newly-founded country.</li>
+<li>Group Blue: George Washington - Franklin Pierce (1789-1853). Presidents during this period emphasized on <em>Government</em>, <em>Belief</em> and <em>Freedom</em> (Here we demonstrate the results of a few well-known presidents). As United States of America was just founded in 1776, the first ten or more presidents were stressing the importance and build-up of the government, as well as giving the citizens confidence about this newly-founded country.</li>
 </ul>
 <pre><code>##                         prex.name   Welfare Legislation    America
 ## GeorgeWashington GeorgeWashington 0.1336772  0.08959724 0.06644221
@@ -306,7 +306,7 @@ fviz_cluster(km.res,
 ## ThomasJefferson   0.1639746 0.19628801 0.03436822 0.2793986 0.03933924
 ## JamesBuchanan     0.3658781 0.08279872 0.01623897 0.1766239 0.02586207</code></pre>
 <ul>
-<li>Group two: James Buchanan - William McKinley (1857-1901). The focuses of this group are on <em>Welfare</em> and <em>Legislation</em>, with less emphases on <em>Government</em> and <em>Belief</em> compared with the Group one (As shown below). From the 1870s to the 1900s, America was in its “Gilded Age”, an era of rapid economic growth and intense political competetion between two parties. Everything seems to be going perfectly well. As the people had already gained faith in their country and government, what they wanted from presidents was improving citizen welfare as well as the legislation system of the country.</li>
+<li>Group Red: James Buchanan - William McKinley (1857-1901). The focuses of this group are on <em>Welfare</em> and <em>Legislation</em>, with less emphases on <em>Government</em> and <em>Belief</em> compared with the Group Blue (As shown below). From the 1870s to the 1900s, America was in its “Gilded Age”, an era of rapid economic growth and intense political competetion between two parties. Everything seems to be going perfectly well. As the people had already gained faith in their country and government, what they wanted from presidents was improving citizen welfare as well as the legislation system of the country.</li>
 </ul>
 <pre><code>##                         prex.name   Welfare Legislation    America
 ## UlyssesSGrant       UlyssesSGrant 0.2211142   0.1833040 0.06287041
@@ -319,7 +319,7 @@ fviz_cluster(km.res,
 ## JamesGarfield     0.1811069 0.11393130 0.06660305 0.15133588 0.05209924
 ## BenjaminHarrison  0.1443476 0.12797147 0.03077126 0.11159535 0.06405177</code></pre>
 <ul>
-<li>Group three: Theodore Roosevelt - Harry S. Truman (1901-1949). For this period, we can notice that presidents focused on topics such as <em>Welfare</em>, <em>Economy</em> and <em>Freedom</em>. The first half of the 20th century might be the most difficult time for the American people. America suffered from great economic depression, as well as the Second World War. How to get out the economic recession and enhance the welfare of citizens became the most important issue. Therefore presidents of this special period chose to highlight these topics.</li>
+<li>Group Purple: Theodore Roosevelt - Harry S. Truman (1901-1949). For this period, we can notice that presidents focused on topics such as <em>Welfare</em>, and <em>Economy</em>. The first half of the 20th century might be the most difficult time for the American people. America suffered from great economic depression, as well as the Second World War. How to get out the economic recession and enhance the welfare of citizens became the most important issue. Therefore presidents of this special period chose to highlight these topics.</li>
 </ul>
 <pre><code>##                             prex.name    Welfare Legislation    America
 ## TheodoreRoosevelt   TheodoreRoosevelt 0.15953545  0.04217604 0.12041565
@@ -334,7 +334,7 @@ fviz_cluster(km.res,
 ## CalvinCoolidge     0.04354935 0.13035077 0.04771106 0.14045779 0.2427170
 ## HerbertHoover      0.12009947 0.11132241 0.04988297 0.03700995 0.3167057</code></pre>
 <ul>
-<li>Group four: Dwight D. Eisenhower - Donald J. Trump (1953-2017). The darkest time had passed, and the presidents started to call for greater attention on <em>America</em> and <em>Freedom</em>. At this phase, <em>Freedom</em> refers more to the importance of human rights and civil liberty. The American dream that <em>every US citizen should have an equal opportunity to achieve success</em> is therefore also a focus in inauguration speeches.</li>
+<li>Group Green: Dwight D. Eisenhower - Donald J. Trump (1953-2017). The darkest time had passed, and the presidents started to call for greater attention on <em>America</em> and <em>Diplomacy</em>. At this phase, <em>Diplomacy</em> becomes important due to globalization and presidents turn to focus on relationship with foreign countries. The American dream that <em>every US citizen should have an equal opportunity to achieve success</em> is therefore also a focus in inauguration speeches.</li>
 </ul>
 <pre><code>##                 prex.name    Welfare Legislation   America Government
 ## JohnFKennedy JohnFKennedy 0.10168810  0.04863344 0.3460611 0.04381029
@@ -348,7 +348,7 @@ fviz_cluster(km.res,
 ## RonaldReagan 0.03840675 0.3406196 0.03438287 0.13479874
 ## BarackObama  0.04033526 0.3431611 0.05020214 0.10986628
 ## DonaldJTrump 0.03214826 0.4481846 0.03517398 0.06391831</code></pre>
-<p>To conclude, the topics in inauguaration speeches alter with social, political and economic environment changes. When social environment is unsteady, presidents tend to focus more on <em>Government</em> and <em>Belief</em>. During the time of political difficulties, <em>Legislation</em> and <em>Diplomacy</em> become the most heated topics. In terms of economic downturn or recession, they put more emphasis on <em>Economy</em> and <em>Welfare</em>. At the better times when everything seems to go in the right direction, presidents talk more about American dream and equality in rights, which belongs to the topic <em>America</em> and <em>Freedom</em>.</p>
+<p>To conclude, the topics in inauguaration speeches alter with social, political and economic environment changes. When social environment is unsteady, presidents tend to focus more on <em>Government</em> and <em>Belief</em>. During the time of political difficulties, <em>Legislation</em> and <em>Welfare</em> become the most heated topics. In terms of economic downturn or recession, they put more emphasis on <em>Economy</em> and <em>Welfare</em>. At the better times when everything seems to go in the right direction, presidents talk more about American dream and equality in rights, which belongs to the topic <em>America</em> and <em>Diplomacy</em>.</p>
 </div>
 </div>
 

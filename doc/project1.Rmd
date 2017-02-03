@@ -1,0 +1,392 @@
+---
+title: 'Project 1: What did the presidents say at their inauguation?'
+output:
+  html_document: default
+  html_notebook: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##Step 0 - Install and load libraries
+
+In this part, we install and load libraries need for the following analysis.
+
+We will use the following packages: "tm", "RColorBrewer", "ggplot2", "dplyr", "tidytext", "png", "SnowballC", "topicmodels" and "factoextra".
+
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+packages.used=c("tm", "RColorBrewer", "ggplot2", "factoextra", "png", 
+                "dplyr", "tidytext", "SnowballC", "topicmodels")
+
+# check packages that need to be installed.
+packages.needed=setdiff(packages.used, 
+                        intersect(installed.packages()[,1], 
+                                  packages.used))
+# install additional packages
+if(length(packages.needed)>0){
+  install.packages(packages.needed, dependencies = TRUE,
+                   repos='http://cran.us.r-project.org')
+}
+library(tm)
+library(RColorBrewer)
+library(dplyr)
+library(tidytext)
+library(SnowballC)
+library(ggplot2)
+library(topicmodels)
+library(factoextra)
+library(png)
+```
+
+## Step 1 - Read in the speeches
+
+In this part, we read all the inauguaration speeches into corpus. 
+
+We also save each filename, presidents' names as well as terms in three seperate vectors for future use.
+
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+locale <- Sys.setlocale(locale="C")
+folder.path="../data/InauguralSpeeches/"
+speeches=list.files(path = folder.path, pattern = "*.txt")
+prex.out<-substr(speeches, 6, nchar(speeches)-4)
+prex.name<-unlist(strsplit(prex.out, split="-[I]*-?[1-4]"))
+prex.term<-substr(prex.out, nchar(prex.out), nchar(prex.out))
+datesfile<-list.files(path="../data", pattern = ".txt")
+
+ff.all<-Corpus(DirSource(folder.path, encoding="UTF-8"))
+
+```
+
+##Step 2 - Data cleaning
+
+In this part, we process with data, and do data cleaning as follows:
+
+First, fix some improper punctuations used in the text, such as "-".
+
+Second, some punctuations connect two words without using whitespace in between. We transform these punctuations into whitespaces.
+
+Third, do the following step by step:
+
+* Remove extra whitespaces
+
+* Convert letters to lower case
+
+* Remove "english" stopwords
+
+* Remove special character(0)
+
+* Remove numbers
+
+* Remove punctuations
+
+* Remove common words endings (e.g., ¡°ing¡±, ¡°es¡±, ¡°s¡±)
+
+```{r, warning=FALSE,message=FALSE}
+#fix illegal characters
+for( i in seq_along(ff.all)) {
+    ff.all[[i]]$content <- gsub( "¡ª", '', ff.all[[i]]$content)
+}
+
+#create the toSpace content transformer
+toSpace <- content_transformer(function(x, pattern) {return (gsub(pattern, " ", x))})
+
+#eliminate colons, hypens and dots
+ff.all<-tm_map(ff.all, toSpace, "--")
+ff.all<-tm_map(ff.all, toSpace, ":")
+ff.all<-tm_map(ff.all, toSpace, "\\.")
+
+ff.all<-tm_map(ff.all, stripWhitespace) #remove extra white spaces
+ff.all<-tm_map(ff.all, content_transformer(tolower)) #convert letters to lower case
+ff.all<-tm_map(ff.all, removeWords, stopwords("english")) #remove stop words
+ff.all<-tm_map(ff.all, removeWords, character(0)) #remove special character(0)
+ff.all<-tm_map(ff.all, removeNumbers) #remove numbers
+ff.all<-tm_map(ff.all, removePunctuation) #remove punctuation
+ff.all<-tm_map(ff.all, stemDocument) #Remove common word endings (e.g., ¡°ing¡±, ¡°es¡±, ¡°s¡±)
+```
+
+##Step 3 - Stage the data
+
+In this part, we continue with processing the data.
+
+We store the frequency of each word in each inauguaration speech in a matrix, with row names as filenames, and column names as each word. We then get the overall frequency of each word by calculating the sum of each column, and we store the values in a vector.
+
+```{r, warning=FALSE, echo=FALSE}
+#Create document-term matrix
+dtm.all<-DocumentTermMatrix(ff.all) 
+#convert rownames to filenames
+row.names(dtm.all)<-prex.out
+#Find the sum of words in each Document
+rowTotals <- apply(dtm.all , 1, sum) 
+
+dtm.matrix <- as.matrix(dtm.all)
+#collapse matrix by summing over columns
+frequ <- colSums(dtm.matrix)
+#create sort order (descending)
+ord <- order(frequ,decreasing=TRUE)
+```
+
+##Step 4 - Text Mining
+
+In this part, we proceed with text mining. Based on the results, we then reveal some interesting findings regarding to two topics: what does presidents value the most, and the importance of women in inaugration speeches.
+
+###4.1 What do presidents value the most?
+
+```{r, warning=FALSE,echo=FALSE}
+#complete the stem words
+stemWords<-c("peopl", "countri", "everi", "constitut", "peac")
+completeWords<-c("people", "country", "every", "constitute", "peace")
+for (i in 1:length(stemWords)) {
+    names(frequ)[which(names(frequ)==stemWords[i])]<-completeWords[i]
+}
+```
+
+Remember previously in data cleanning, we dropped words' custom endings in order to cluster the words in the same family. Now we first find the top-20 high frequency words, then get the complete words from the stem words. Finally We use a barplot here to show the number of occurrences of each high frequency words.
+
+```{r, warning=FALSE, fig.height=6, fig.width=6}
+#use ggplot2 to plot the frequency of each word
+wf=data.frame(term=names(frequ),occurrences=frequ)
+
+mydataset <- subset(wf, frequ>frequ[ord][21])
+# reorder term according to the ranking of occurrences
+mydataset$term <-factor(mydataset$term,
+                        levels=mydataset$term[order(mydataset$occurrences, decreasing = TRUE)] )
+
+p <- ggplot(mydataset, aes(term, occurrences))
+p <- p + geom_bar(stat="identity")
+p <- p + theme(axis.text.x=element_text(angle=45, hjust=1))
+p
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+ggsave(filename="top20.png", path="../figs/")
+
+```
+
+####Top-20 frequency words
+
+Presidents seem to have a preference for their choice of words when delivering inauguration speech. If we put the first four words in the figure above together, the meaning behind them is somehow clear: *people govern nation*. And if we take more words into consideration, we can see that presidents are basically conveying two different messages. On one hand, they manage to let people believe in their leadership, that they will make the country great, and that they will even make the world a better place. On the other hand, they seek to convince the public of the importance of people's voice in governing the nation, and emphasize on equality and democracy.
+
+####Are modal verbs important?
+
+It might be surprising at first to find that one-fourth of the top-20 frequency words in presidents' inauguration speeches are modal verbs. "Will", as the word used most frequently, has the number of occurrences that far exceeds the word "nation" in the second place. This clearly shows that presidents talk a lot about things that *will* happen in the future, trying to picture what future *will* look like for the public. If we observe it together with the other four modal verbs, we can easily see that in terms of occurences: will > can > must > may > shall. The first three words demonstrate stronger and more affirmitive feelings. Presidents seems to first picture the great future, then convince the people that the goals *can* and *must* be reached, before finally telling us what they *may* or *shall* do to arrive at the finishing line.
+
+###4.2 Women as a minority: do women matter?
+
+Feminism in the United States has long been a hot issue. Feminists have never stopped fighting for equal rights between men and women. Let's see how US presidents perceive the importance of women as a minority.
+
+The words that are related to the women topic are "women", "woman" and "womanhood". We observe the occurrences of these three words in inauguration speeches in terms of both inauguration dates and corresponding presidents. Finally we use a barplot to clearly demonstrate the results. 
+
+```{r, warning=FALSE, fig.height=6, fig.width=6}
+#Count the total occurence of the women-related words: "women", "woman", "womanhood"
+womenWords <- c("women", "woman", "womanhood")
+womenCount <- sum(apply(dtm.matrix[,womenWords], 2, sum))
+
+#Create a dataframe for presidents who used women-related words 
+womenSub <- data.frame(apply(dtm.matrix[,womenWords], 1, sum))
+colnames(womenSub) <- "occurrence"
+women_df <- data.frame(womenSub[womenSub$occurrence>=1,])
+rownames(women_df) <- rownames(womenSub)[womenSub$occurrence>=1]
+colnames(women_df) <- "occurrence"
+prex_women <- unlist(strsplit(rownames(women_df), split = "-[1-4]"))
+prex_term <- substr(rownames(women_df), nchar(rownames(women_df)), nchar(rownames(women_df)))
+dates <- c(2009,2013,1923,2017,1937,1941,1945,1989,2005,1929,1981,1985,1921,1993,1997,1913)
+women_df<- cbind(prex_women, prex_term, dates, women_df)
+
+#barplot
+ggplot(women_df) + 
+  geom_bar(aes(x=dates, y=occurrence, fill=prex_women), stat='identity') + #barplot
+  coord_flip() +  #flip the coordinates
+  scale_fill_hue(name='Presidents') +  #change the scale to presidents' names
+  geom_text(aes(x=dates, y=1, label=gsub('^[A-Z][a-z]+', '', prex_women)))  #add presidents' last names
+```
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+ggsave(filename="women.png", path="../figs/")
+
+```
+
+Although first wave of feminism began in 1848, *women* has not been refered to in inauguration speech until 1913, when president Wilson first placed women next to men:
+
+*"Nowhere else in the world have noble men and women exhibited in more striking forms the beauty and the energy of sympathy and helpfulness and counsel in their efforts to rectify wrong, alleviate suffering, and set the weak in the way of strength and hope."*
+
+With the success of first wave of feminism, women were given the right to vote since 1920, therefore more presidents in the 1920s to 1940s had involved *women* in their speeches. Some presidents, such as Harding and Coolidge, mentioned particularly about women in politics. Other presidents, at the very least, started to use the phrase *'men and women'* instead of *'men'*.
+
+It is also intriguing to notice that for the next three decades, *women* was out of sight again! The reason might be that America was going through multiple economic and political reforms in the 1950s and 1960s. Also, the African-American Civil Rights Movement was brought on presidents' top agenda. Although second-wave feminism was on the way, US presidents had a lot of more severe and difficult issues to worry about.
+
+From the 1980s till now, *women* has gradually become a fixed topic. One remarkable phenomena during this phase is that presidents, starting from George Bush, had focused more on helping women and children, as well as seeking for the equal rights between women and men. *Women* appeared not merely in the general phrase *'men and women'*, but had taken up some paragraphs in recent inauguration speeches.
+
+To conclude, *women* have more and more important place in presidents' inauguration speeches of last two decades. However, despite the trend, the total occurrence of women-related words is only 37 in these 228 years, which is a lot less compared with high frequency words. *Women* is getting attention, but the fact that it is a minority may not change in the near future.
+
+##Step 5 - Topic Modeling
+
+In this part, we focus on analyzing the topics covered in inauguration speeches, and then clustring the presidents based on topics.
+
+Before doing topic modeling, we further remove some custome words that may affect the output results. These words mostly include modal verbs and other words that may not contribute to topic selection.
+```{r, warning=FALSE, echo=FALSE}
+#define and eliminate all custom stopwords
+myStopwords <- c('can','say','one','way','use',
+'also','howev','tell','will','much','need','take',
+'tend','even','like','particular','rather','said',
+'get','well','make','ask','come','end','first',
+'two','help','often','may','might','see','someth',
+'thing','point','post','look','right','now','think',
+"'ve","'re",'anoth','put','set','new','good',
+'want','sure','kind','larg','yes','day','etc',
+'quit','sinc','attempt','lack','seen','awar',
+'littl','ever','moreov','though','found','abl',
+'enough','far','earl','away','achiev','draw',
+'last','never','brief','bit','entir','brief',
+'great','lot', "must", "upon", "year", "let","shall",
+"within", "yet", "whose", "time", "today", "more", "less",
+"with", "without", "know", "made")
+ff.all <- tm_map(ff.all, removeWords, myStopwords)
+```
+
+```{r, echo=FALSE}
+#stage the data
+dtm <- DocumentTermMatrix(ff.all)
+#convert rownames to filenames
+rownames(dtm) <- prex.out
+rowTotals <- apply(dtm , 1, sum) #Find the sum of words in each Document
+dtm  <- dtm[rowTotals> 0, ]
+```
+
+We select topic number to be eight based on multiple times of observations, and run LDA.
+```{r, echo=FALSE}
+#Set parameters for Gibbs sampling
+burnin <- 4000
+iter <- 2000
+thin <- 500
+seed <-list(2003,5,63,100001,765)
+nstart <- 5
+best <- TRUE
+#Number of topics
+k <- 8
+#Run LDA using Gibbs sampling
+ldaOut <-LDA(dtm, k, method="Gibbs", control=list(nstart=nstart, 
+                                                 seed = seed, best=best,
+                                                 burnin = burnin, iter = iter, 
+                                                 thin=thin))
+
+```
+
+Then we write out the results in files.
+```{r, echo=FALSE}
+#write out results
+#docs to topics
+ldaOut.topics <- as.matrix(topics(ldaOut))
+#write the file
+write.csv(ldaOut.topics,file=paste("../output/LDAGibbs",k,"DocsToTopics.csv"))
+#top 10 terms in each topic
+ldaOut.terms <- as.matrix(terms(ldaOut,20))
+write.csv(ldaOut.terms,file=paste("../output/LDAGibbs",k,"TopicsToTerms.csv"))
+#probabilities associated with each topic assignment
+topicProbabilities <- as.data.frame(ldaOut@gamma)
+write.csv(topicProbabilities,file=paste("../output/LDAGibbs",k,"TopicProbabilities.csv"))
+```
+
+```{r}
+# get the most popular terms
+terms.beta=ldaOut@beta
+terms.beta=scale(terms.beta)
+topics.terms=NULL
+for(i in 1:k){
+  topics.terms=rbind(topics.terms, ldaOut@terms[order(terms.beta[i,], decreasing = TRUE)[1:5]])
+}
+topics.terms
+```
+
+By observing the most popular terms and the most salient terms from each topic, we assign a hashtag to each topic.
+
+* Topic 1: Welfare (terms-included: civil, secur(e), progress, support, best, citizen, effort, etc.)
+ 
+* Topic 2: Legislation (terms-included: law, congress, polici(es), legisl(ation), administr(ation), etc.)
+
+* Topic 3: America (terms-included: america(n), land, heart, dream, fellow, centuri(es), etc.)
+
+* Topic 4: Government (terms-included: govern, constitut(e), institut(e), etc.)
+
+* Topic 5: Belief (terms-included: confid(ence), bless, hope, devot(e), trust, wisdom, happi(ness), etc.)
+
+* Topic 6: Diplomacy (terms-included: war, interest, foreign, respect, forc(e), peac(e), etc.)
+
+* Topic 7: Freedom (terms-included: freedom, peac(e), free, justic(e), liberti(es), etc.)
+
+* Topic 8: Economy (terms-included: econom(y), industri(es), opportun(ity), etc.)
+
+&nbsp;
+
+Now based on the topics chosen, we cluster the presidents by topics and create a cluster plot.
+```{r,warning=FALSE}
+#create a dataframe for the output of lda
+topics.hash <- c("Welfare", "Legislation", "America", "Government", 
+                 "Belief", "Diplomacy", "Freedom", "Economy")
+colnames(topicProbabilities)=topics.hash
+rownames(topicProbabilities)=prex.out
+corpus.list.df=data.frame(cbind(prex.out,prex.name, prex.term, topicProbabilities))
+corpus.list.df$ldatopic=as.vector(ldaOut.topics)
+corpus.list.df$ldahash=topics.hash[ldaOut.topics]
+```
+
+```{r, fig.height=6, fig.width=6}
+presid.summary=tbl_df(corpus.list.df)%>%
+  select(prex.name, Welfare:Economy)%>%
+  group_by(prex.name)%>%
+  summarise_each(funs(mean))
+presid.summary=as.data.frame(presid.summary)
+rownames(presid.summary)=as.character((presid.summary[,1]))
+km.res=kmeans(scale(presid.summary[,-1]), iter.max=200, 4)
+fviz_cluster(km.res, 
+             set.seed(1),
+             stand=T, repel= TRUE,
+             data = presid.summary[,-1],
+             show.clust.cent=FALSE)
+```
+
+```{r,message=FALSE, echo=FALSE}
+ggsave(filename="cluster.png", path="../figs/")
+```
+
+###Presidents prefer similar topics?
+
+What we get from the cluster plot seems to give us a satisfying result. It is obvious that presidents can be clearly classified into 4 categories according to their preference of topics. If we further link the four groups with the inaugration dates, we come to find out that presidents' choices of topics are related to time: Although topics has shifted over time, presidents within certain years tend to have similar topics. 
+
+The four groups are as follows:
+
+* Group one: George Washington - Franklin Pierce (1789-1853). Presidents during this period emphasized on *Government*, *Belief* and *Diplomacy* (Here we demonstrate the results of a few well-known presidents). As United States of America was just founded in 1776, the first ten or more presidents were stressing the importance and build-up of the government and relationship with foreign countries, as well as giving the citizens confidence about this newly-founded country.
+
+```{r, warning=FALSE,echo=FALSE}
+one <- c("GeorgeWashington", "ThomasJefferson", "JamesBuchanan")
+presid.summary[one, ]
+```
+
+
+* Group two: James Buchanan - William McKinley (1857-1901). The focuses of this group are on *Welfare* and *Legislation*, with less emphases on *Government* and *Belief* compared with the Group one (As shown below). From the 1870s to the 1900s, America was in its "Gilded Age", an era of rapid economic growth and intense political competetion between two parties. Everything seems to be going perfectly well. As the people had already gained faith in their country and government, what they wanted from presidents was improving citizen welfare as well as the legislation system of the country.
+
+```{r,warning=FALSE,echo=FALSE}
+two <- c("UlyssesSGrant","GroverCleveland", "JamesGarfield", "BenjaminHarrison")
+presid.summary[two, ]
+```
+
+
+* Group three: Theodore Roosevelt - Harry S. Truman (1901-1949). For this period, we can notice that presidents focused on topics such as *Welfare*, *Economy* and *Freedom*. The first half of the 20th century might be the most difficult time for the American people. America suffered from great economic depression, as well as the Second World War. How to get out the economic recession and enhance the welfare of citizens became the most important issue. Therefore presidents of this special period chose to highlight these topics.
+
+```{r, warning=FALSE,echo=FALSE}
+three <- c("TheodoreRoosevelt", "FranklinDRoosevelt", "HarrySTruman", "CalvinCoolidge", "HerbertHoover")
+presid.summary[three, ]
+```
+
+* Group four: Dwight D. Eisenhower - Donald J. Trump (1953-2017). The darkest time had passed, and the presidents started to call for greater attention on *America* and *Freedom*. At this phase, *Freedom* refers more to the importance of human rights and civil liberty. The American dream that *every US citizen should have an equal opportunity to achieve success* is therefore also a focus in inauguration speeches.
+
+```{r, warning=FALSE, echo=FALSE}
+four <- c("JohnFKennedy", "JimmyCarter", "RonaldReagan", "BarackObama", "DonaldJTrump")
+presid.summary[four, ]
+
+```
+
+To conclude, the topics in inauguaration speeches alter with social, political and economic environment changes. When social environment is unsteady, presidents tend to focus more on *Government* and *Belief*. During the time of political difficulties, *Legislation* and *Diplomacy* become the most heated topics. In terms of economic downturn or recession, they put more emphasis on *Economy* and *Welfare*. At the better times when everything seems to go in the right direction, presidents talk more about American dream and equality in rights, which belongs to the topic *America* and *Freedom*.
+
+
+
+

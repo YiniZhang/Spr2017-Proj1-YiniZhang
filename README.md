@@ -1,6 +1,6 @@
 ﻿# Spring 2017
 
-# Project 1: What did the presidents say at their inauguation?
+# Project 1: What did the presidents say at their inauguration?
 
 ![image](figs/title.jpg)
 
@@ -19,6 +19,8 @@
 The first part of the study focuses on exploring how US presidents perceive the importance of women as a minority. The results show the positive relationship between feminism movement and presidents' choices of words. Though women is getting attention, especially in last two decades, the fact that it is a minority may not change in the near future.
 
 The second part of the project clusters the presidents into four groups based on topics in inauguration speeches. The study finds out that topics alter with social, political and economic environment changes. Although topics has shifted over time, presidents within certain years tend to focus on similar topics.
+
+
 
 
 
